@@ -11,7 +11,7 @@ const int BRANCH_HIGH_RANGE = 5;
 struct RouterNode{
 
   int IP;
-  RouterNode* NeighborNodes = NULL;
+  std::vector<RouterNode*> NeighborNodes;
 
 };
 
@@ -31,35 +31,38 @@ int main()
     holdNode = new RouterNode;
     holdNode->IP = index;
 
+    routerNodeList.push_back(holdNode);
+
   }
 
   std::ifstream topologyFile;
   topologyFile.open("graphtopology.txt");
   std::string holdString;
+  char holdChar;
   int currentNode;
-  size_t foundPosition;
+  int neighborNode;
+  char pauseChar;
 
   while(topologyFile.good())
   {
 
-    getline(topologyFile, holdString);
+    getline(topologyFile, holdString, ' ');
+    topologyFile >> currentNode;
+    topologyFile >> holdChar;
 
-    // Find Parent Node Number
-    holdString.find(':');
+    holdNode = routerNodeList.at(currentNode-1);
 
-    // Find node in vector of nodes
-    holdNode = routerNodeList[currentNode - 1];
-
-
-    std::cout << holdString << std::endl;
+    while(holdChar != ';')
+    {
+      getline(topologyFile, holdString, ' ');
+      topologyFile >> neighborNode;
+      topologyFile >> holdChar;
+      holdNode->NeighborNodes.push_back(routerNodeList[neighborNode-1]);
+    }
 
   }
 
   topologyFile.close();
-
-
-
-
 
   return(0);
 }
