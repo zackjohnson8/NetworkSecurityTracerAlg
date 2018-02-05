@@ -15,6 +15,9 @@ struct RouterNode{
 
 };
 
+void builtRouterNetwork(std::vector<RouterNode*>* routerNodeList);
+void printTree(std::vector<RouterNode*>* routerNodeList);
+
 int main()
 {
 
@@ -23,6 +26,15 @@ int main()
   // Create a topology using a file and nodes to connect
   // Use a file to build the topology
   std::vector<RouterNode*> routerNodeList;
+  builtRouterNetwork(&routerNodeList);
+
+  printTree(&routerNodeList);
+
+  return(0);
+}
+
+void builtRouterNetwork(std::vector<RouterNode*>* routerNodeList)
+{
 
   RouterNode* holdNode;
   for(int index = 1; index <= NUM_OF_ROUTERS; index++)
@@ -31,7 +43,7 @@ int main()
     holdNode = new RouterNode;
     holdNode->IP = index;
 
-    routerNodeList.push_back(holdNode);
+    routerNodeList->push_back(holdNode);
 
   }
 
@@ -50,19 +62,41 @@ int main()
     topologyFile >> currentNode;
     topologyFile >> holdChar;
 
-    holdNode = routerNodeList.at(currentNode-1);
+    holdNode = routerNodeList->at(currentNode-1);
 
     while(holdChar != ';')
     {
       getline(topologyFile, holdString, ' ');
       topologyFile >> neighborNode;
       topologyFile >> holdChar;
-      holdNode->NeighborNodes.push_back(routerNodeList[neighborNode-1]);
+      holdNode->NeighborNodes.push_back(routerNodeList->at(neighborNode-1));
     }
 
   }
 
   topologyFile.close();
 
-  return(0);
+}
+
+void printTree(std::vector<RouterNode*>* routerNodeList)
+{
+
+  for(int index = 0; index < NUM_OF_ROUTERS; index++)
+  {
+
+    std::cout << "Router " << routerNodeList->at(index)->IP << " has neighbors: ";
+
+    for(int indexNeighbor = 0; indexNeighbor < routerNodeList->at(index)->NeighborNodes.size(); indexNeighbor++)
+    {
+
+      std::cout << routerNodeList->at(index)->NeighborNodes.at(indexNeighbor)->IP << ", ";
+
+    }
+
+    std::cout << std::endl;
+
+  }
+
+
+
 }
