@@ -2,11 +2,13 @@
 #include <cstdlib>
 #include <vector>
 #include <fstream>
+#include <time.h>
 
 const int NUM_OF_ROUTERS = 20;
 const int MAX_HOP_COUNT = 15;
 const int BRANCH_LOW_RANGE = 3;
 const int BRANCH_HIGH_RANGE = 5;
+const float PROBABILITY_OF_ROUTER_MARKING = .2;
 
 struct RouterNode{
 
@@ -15,12 +17,19 @@ struct RouterNode{
 
 };
 
+// FUNCTION DECLARATION
 void builtRouterNetwork(std::vector<RouterNode*>* routerNodeList);
+
 void printTree(std::vector<RouterNode*>* routerNodeList);
+
+RouterNode* chooseAttacker(std::vector<RouterNode*>* routerNodeList);
+
+std::vector<RouterNode*>* findPathToVictim(std::vector<RouterNode*>* routerNodeList, RouterNode* attackerNode);
 
 int main()
 {
 
+  srand(time(NULL));
   int NodeCount = 0;
 
   // Create a topology using a file and nodes to connect
@@ -28,9 +37,66 @@ int main()
   std::vector<RouterNode*> routerNodeList;
   builtRouterNetwork(&routerNodeList);
 
-  printTree(&routerNodeList);
+  //printTree(&routerNodeList);
+
+  findPathToVictim(&routerNodeList, chooseAttacker(&routerNodeList));
 
   return(0);
+}
+
+std::vector<RouterNode*>* findPathToVictim(
+  std::vector<RouterNode*>* routerNodeList,
+  RouterNode* attackerNode
+  )
+{
+
+  std::vector<RouterNode*>* pathToVictim = new std::vector<RouterNode*>();
+  pathToVictim->push_back(attackerNode);
+
+  RouterNode* victimNode = routerNodeList->at(0); // should be the top router
+
+  bool foundPath = false;
+  int count = 0;
+  while(!foundPath)
+  {
+
+    pathToVictim->push_back(pathToVictim->at(pathToVictim->size()-1)->NeighborNodes.at(0));
+
+
+    if(pathToVictim->at(pathToVictim->size()-1)->NeighborNodes.at(0) == victimNode)
+    {
+
+      pathToVictim->push_back(pathToVictim->at(pathToVictim->size()-1)->NeighborNodes.at(0));
+      foundPath != foundPath;
+
+    }
+
+
+  }
+
+  return pathToVictim;
+
+}
+
+RouterNode* chooseAttacker(std::vector<RouterNode*>* routerNodeList)
+{
+
+  std::vector<RouterNode*> holdPossibleAttackers;
+
+  for(int index = 0; index < routerNodeList->size(); index++)
+  {
+    // only has a parent node
+    if(routerNodeList->at(index)->NeighborNodes.size() == 1)
+    {
+
+      holdPossibleAttackers.push_back(routerNodeList->at(index));
+
+    }
+
+  }
+
+  return holdPossibleAttackers.at( rand() % holdPossibleAttackers.size() );
+
 }
 
 void builtRouterNetwork(std::vector<RouterNode*>* routerNodeList)
