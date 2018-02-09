@@ -39,7 +39,17 @@ int main()
 
   //printTree(&routerNodeList);
 
-  findPathToVictim(&routerNodeList, chooseAttacker(&routerNodeList));
+  std::vector<RouterNode*>* pathToVictimNode;
+
+  pathToVictimNode = findPathToVictim(&routerNodeList, chooseAttacker(&routerNodeList));
+
+  std::cout << "Path to victim is..." << std::endl;
+  for(int index = 0; index < pathToVictimNode->size(); index++)
+  {
+
+    std::cout << pathToVictimNode->at(index)->IP << std::endl;
+
+  }
 
   return(0);
 }
@@ -49,6 +59,8 @@ std::vector<RouterNode*>* findPathToVictim(
   RouterNode* attackerNode
   )
 {
+
+  std::cout << "AttackNode = " << attackerNode->IP << std::endl;
 
   std::vector<RouterNode*>* pathToVictim = new std::vector<RouterNode*>();
   pathToVictim->push_back(attackerNode);
@@ -63,11 +75,11 @@ std::vector<RouterNode*>* findPathToVictim(
     pathToVictim->push_back(pathToVictim->at(pathToVictim->size()-1)->NeighborNodes.at(0));
 
 
-    if(pathToVictim->at(pathToVictim->size()-1)->NeighborNodes.at(0) == victimNode)
+
+    if(pathToVictim->at(pathToVictim->size()-1)->IP == victimNode->IP)
     {
 
-      pathToVictim->push_back(pathToVictim->at(pathToVictim->size()-1)->NeighborNodes.at(0));
-      foundPath != foundPath;
+      foundPath = !foundPath;
 
     }
 
