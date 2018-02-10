@@ -3,6 +3,7 @@
 #include <vector>
 #include <fstream>
 #include <time.h>
+#include <algorithm>
 
 const int NUM_OF_ROUTERS = 20;
 const int MAX_HOP_COUNT = 15;
@@ -24,6 +25,11 @@ struct Packet
   RouterNode* p_markedRouter;
   int p_routerNum;
 
+  bool operator < (const Packet& rhs) const
+  {
+        return p_routerNum < rhs.p_routerNum;
+  }
+
 };
 
 // FUNCTION DECLARATION
@@ -33,7 +39,7 @@ RouterNode* chooseAttacker(std::vector<RouterNode*>* routerNodeList); //
 Packet* sendPacketToVictim(std::vector<RouterNode*>* pathToVictim);//
 
 std::vector<RouterNode*>* findPathToVictim(std::vector<RouterNode*>* routerNodeList, RouterNode* attackerNode); //
-bool buildPath(Packet* newPacket, RouterNode* attackerNode, std::vector<RouterNode*>* reconstructedPath); //
+bool buildPath(Packet* newPacket, RouterNode* attackerNode, std::vector<Packet*>* reconstructedPath, std::vector<RouterNode*>* realPath); //
 
 int main()
 {
@@ -57,7 +63,9 @@ int main()
   int count = 0;
   bool attackingUser = false;
   Packet* sentPacket;
-  std::vector<RouterNode*> reconstructedPath;
+  std::vector<Packet*> reconstructedPath;
+
+  int lastSize;
 
   while(!attackingUser)
   {
@@ -68,7 +76,10 @@ int main()
 
     if(count % (attackerSpeed*2) == 0)
     {
-      attackingUser = buildPath(sentPacket, attackerNode, reconstructedPath);
+      if(sentPacket->p_routerNum >= 0)
+      {
+        attackingUser = buildPath(sentPacket, attackerNode, &reconstructedPath, pathToVictimNode);
+      }
     }
 
     count++;
@@ -80,17 +91,48 @@ int main()
   return(0);
 }
 
-bool buildPath(Packet* newPacket, RouterNode* attackerNode, std::vector<RouterNode*>* reconstructedPath)
+bool buildPath(Packet* newPacket, RouterNode* attackerNode, std::vector<Packet*>* reconstructedPath, std::vector<RouterNode*>* realPath)
 {
+  std::cout << "MADE IT" << std::endl;
+  // Check if newPacket router has been placed into reconstructedPath already
+  bool check = false;
+  for(int index = 0; index < reconstructedPath->size(); index++)
+  {
+    if(reconstructedPath->at(index)->p_markedRouter == newPacket->p_markedRouter)
+    {
+      check = true;
+    }
+  }
 
-  return true;
+  // if its not already in then push into reconstructedPath
+  if(!check)
+  {
+    reconstructedPath->push_back(newPacket);
+  }else
+  {
+
+    delete newPacket;
+    return false;
+
+  }
+
+  // sort
+  std::sort(reconstructedPath->begin(), reconstructedPath->end());
+
+  // Check if full path has been built
+  if(reconstructedPath->size() == realPath->size())
+  {
+
+    return true;
+
+  }
 
 }
 
 Packet* sendPacketToVictim(std::vector<RouterNode*>* pathToVictim)
 {
 
-  Packet* newPacket = new Packet;
+  Packet* newPacket = new Packet();
   newPacket->p_routerNum = -1; // setting for easier debug
   int randomProbability;
 
@@ -108,6 +150,7 @@ Packet* sendPacketToVictim(std::vector<RouterNode*>* pathToVictim)
     }
   }
 
+  return newPacket;
 
 }
 
