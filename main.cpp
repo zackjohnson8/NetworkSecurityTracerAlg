@@ -93,7 +93,7 @@ int main()
 
 bool buildPath(Packet* newPacket, RouterNode* attackerNode, std::vector<Packet*>* reconstructedPath, std::vector<RouterNode*>* realPath)
 {
-  std::cout << "MADE IT" << std::endl;
+
   // Check if newPacket router has been placed into reconstructedPath already
   bool check = false;
   for(int index = 0; index < reconstructedPath->size(); index++)
