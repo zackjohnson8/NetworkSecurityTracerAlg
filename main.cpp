@@ -8,59 +8,115 @@ const int NUM_OF_ROUTERS = 20;
 const int MAX_HOP_COUNT = 15;
 const int BRANCH_LOW_RANGE = 3;
 const int BRANCH_HIGH_RANGE = 5;
-const float PROBABILITY_OF_ROUTER_MARKING = .2;
+const int PROBABILITY_OF_ROUTER_MARKING = 20; // Just gonna treat this as 20% or .2
 
-struct RouterNode{
+struct RouterNode
+{
 
   int IP;
   std::vector<RouterNode*> NeighborNodes;
 
 };
 
+struct Packet
+{
+
+  RouterNode* p_markedRouter;
+  int p_routerNum;
+
+};
+
 // FUNCTION DECLARATION
-void builtRouterNetwork(std::vector<RouterNode*>* routerNodeList);
+void builtRouterNetwork(std::vector<RouterNode*>* routerNodeList); //
+void printTree(std::vector<RouterNode*>* routerNodeList); //
+RouterNode* chooseAttacker(std::vector<RouterNode*>* routerNodeList); //
+Packet* sendPacketToVictim(std::vector<RouterNode*>* pathToVictim);//
 
-void printTree(std::vector<RouterNode*>* routerNodeList);
-
-RouterNode* chooseAttacker(std::vector<RouterNode*>* routerNodeList);
-
-std::vector<RouterNode*>* findPathToVictim(std::vector<RouterNode*>* routerNodeList, RouterNode* attackerNode);
+std::vector<RouterNode*>* findPathToVictim(std::vector<RouterNode*>* routerNodeList, RouterNode* attackerNode); //
+bool buildPath(Packet* newPacket, RouterNode* attackerNode, std::vector<RouterNode*>* reconstructedPath); //
 
 int main()
 {
 
   srand(time(NULL));
-  int NodeCount = 0;
+
+  // Random attacker speed
+  int attackerSpeed = rand() % 100 + 1;
 
   // Create a topology using a file and nodes to connect
   // Use a file to build the topology
   std::vector<RouterNode*> routerNodeList;
   builtRouterNetwork(&routerNodeList);
 
-  //printTree(&routerNodeList);
-
+  // Get the path to victim from attacker
   std::vector<RouterNode*>* pathToVictimNode;
+  RouterNode* attackerNode = chooseAttacker(&routerNodeList);
+  pathToVictimNode = findPathToVictim(&routerNodeList, attackerNode);
 
-  pathToVictimNode = findPathToVictim(&routerNodeList, chooseAttacker(&routerNodeList));
+  // Attack the Victim and trace back using the algs
+  int count = 0;
+  bool attackingUser = false;
+  Packet* sentPacket;
+  std::vector<RouterNode*> reconstructedPath;
 
-  std::cout << "Path to victim is..." << std::endl;
-  for(int index = 0; index < pathToVictimNode->size(); index++)
+  while(!attackingUser)
   {
+    if(count % attackerSpeed == 0)
+    {
+      sentPacket = sendPacketToVictim(pathToVictimNode);
+    }
 
-    std::cout << pathToVictimNode->at(index)->IP << std::endl;
+    if(count % (attackerSpeed*2) == 0)
+    {
+      attackingUser = buildPath(sentPacket, attackerNode, reconstructedPath);
+    }
+
+    count++;
 
   }
+
+  std::cout << "Count = " << count << std::endl;
 
   return(0);
 }
 
-std::vector<RouterNode*>* findPathToVictim(
-  std::vector<RouterNode*>* routerNodeList,
-  RouterNode* attackerNode
-  )
+bool buildPath(Packet* newPacket, RouterNode* attackerNode, std::vector<RouterNode*>* reconstructedPath)
 {
 
-  std::cout << "AttackNode = " << attackerNode->IP << std::endl;
+  return true;
+
+}
+
+Packet* sendPacketToVictim(std::vector<RouterNode*>* pathToVictim)
+{
+
+  Packet* newPacket = new Packet;
+  newPacket->p_routerNum = -1; // setting for easier debug
+  int randomProbability;
+
+  // Victim in the last node.
+  // Attacker is the first RouterNode [0]
+  // Simulate passing the packet to each router
+  for(int index = 0; index < pathToVictim->size(); index++)
+  {
+    randomProbability = rand() % 100 + 1;
+
+    if(randomProbability < PROBABILITY_OF_ROUTER_MARKING)
+    {
+      newPacket->p_markedRouter = pathToVictim->at(index);
+      newPacket->p_routerNum = index;
+    }
+  }
+
+
+}
+
+std::vector<RouterNode*>* findPathToVictim
+(
+  std::vector<RouterNode*>* routerNodeList,
+  RouterNode* attackerNode
+)
+{
 
   std::vector<RouterNode*>* pathToVictim = new std::vector<RouterNode*>();
   pathToVictim->push_back(attackerNode);
