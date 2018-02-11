@@ -9,7 +9,8 @@ const int NUM_OF_ROUTERS = 20;
 const int MAX_HOP_COUNT = 15;
 const int BRANCH_LOW_RANGE = 3;
 const int BRANCH_HIGH_RANGE = 5;
-const int PROBABILITY_OF_ROUTER_MARKING = 20; // Just gonna treat this as 20% or .2
+const int PROBABILITY_OF_ROUTER_MARKING = 80; // Just gonna treat this as 20% or .2
+const int ATTACKER_SPEED = 1000;
 
 struct RouterNode
 {
@@ -32,14 +33,31 @@ struct Packet
 
 };
 
+struct PacketEdge
+{
+
+  RouterNode* startRouter;
+  RouterNode* endRouter;
+  int routerNum;
+  int distance;
+
+  bool operator < (const PacketEdge& rhs) const
+  {
+        return routerNum < rhs.routerNum;
+  }
+
+};
+
 // FUNCTION DECLARATION
 void builtRouterNetwork(std::vector<RouterNode*>* routerNodeList); //
 void printTree(std::vector<RouterNode*>* routerNodeList); //
 RouterNode* chooseAttacker(std::vector<RouterNode*>* routerNodeList); //
-Packet* sendPacketToVictim(std::vector<RouterNode*>* pathToVictim);//
+Packet* sendPacketToVictim(std::vector<RouterNode*>* pathToVictim); //
+PacketEdge* sendPacketToVictimEdge(std::vector<RouterNode*>* pathToVictim); //
 
 std::vector<RouterNode*>* findPathToVictim(std::vector<RouterNode*>* routerNodeList, RouterNode* attackerNode); //
 bool buildPath(Packet* newPacket, RouterNode* attackerNode, std::vector<Packet*>* reconstructedPath, std::vector<RouterNode*>* realPath); //
+
 
 int main()
 {
@@ -47,7 +65,7 @@ int main()
   srand(time(NULL));
 
   // Random attacker speed
-  int attackerSpeed = rand() % 100 + 1;
+  int attackerSpeed = rand() % ATTACKER_SPEED + 1;
 
   // Create a topology using a file and nodes to connect
   // Use a file to build the topology
@@ -59,13 +77,13 @@ int main()
   RouterNode* attackerNode = chooseAttacker(&routerNodeList);
   pathToVictimNode = findPathToVictim(&routerNodeList, attackerNode);
 
-  // Attack the Victim and trace back using the algs
+  // Node Sampling algo
   int count = 0;
   bool attackingUser = false;
   Packet* sentPacket;
   std::vector<Packet*> reconstructedPath;
 
-  int lastSize;
+  int sizeCheck = 0;
 
   while(!attackingUser)
   {
@@ -78,15 +96,57 @@ int main()
     {
       if(sentPacket->p_routerNum >= 0)
       {
+        sizeCheck = reconstructedPath.size();
         attackingUser = buildPath(sentPacket, attackerNode, &reconstructedPath, pathToVictimNode);
+        if(sizeCheck != reconstructedPath.size())
+        {
+          std::cout << "At packet number " << count << " new route found" << std::endl;
+        }
+
       }
     }
 
     count++;
 
   }
+  std::cout << "Node Sampling sent packet count = " << count << std::endl;
+/*
+  // Edge sampling algo
+  int countEdge = 0;
+  bool attackingUserEdge = false;
+  PacketEdge* sentPacketEdge;
+  std::vector<PacketEdge*> reconstructedPathEdge;
+  char holdChar;
 
-  std::cout << "Count = " << count << std::endl;
+  while(!attackingUserEdge)
+  {
+
+    if(countEdge % attackerSpeed == 0)
+    {
+      std::cout << "here" << std::endl;
+      sentPacketEdge = sendPacketToVictimEdge(pathToVictimNode);
+
+    }
+
+    std::cout << "Packet back: " << sentPacketEdge->routerNum << ";" << std::endl;
+
+    if(countEdge % (attackerSpeed*2) == 0)
+    {
+      if(sentPacketEdge->routerNum >= 0)
+      {
+
+
+      }
+
+
+    }
+
+    countEdge++;
+    std::cin >> holdChar;
+
+  }
+
+*/
 
   return(0);
 }
@@ -147,6 +207,47 @@ Packet* sendPacketToVictim(std::vector<RouterNode*>* pathToVictim)
     {
       newPacket->p_markedRouter = pathToVictim->at(index);
       newPacket->p_routerNum = index;
+    }
+  }
+
+  return newPacket;
+
+}
+
+PacketEdge* sendPacketToVictimEdge(std::vector<RouterNode*>* pathToVictim)
+{
+
+  PacketEdge* newPacket = new PacketEdge();
+  newPacket->routerNum = -1; // setting for easier debug
+  newPacket->distance = -1; // setting for easier debug
+  int randomProbability;
+
+  // Victim in the last node.
+  // Attacker is the first RouterNode [0]
+  // Simulate passing the packet to each router
+  std::cout << std::endl;
+  std::cout << pathToVictim->size() << std::endl;
+  for(int index = 0; index < pathToVictim->size(); index++)
+  {
+    randomProbability = rand() % 100 + 1;
+
+    if(randomProbability < PROBABILITY_OF_ROUTER_MARKING)
+    {
+      newPacket->startRouter = pathToVictim->at(index);
+      newPacket->distance = 0;
+      newPacket->routerNum = index;
+    }else
+    {
+
+      if(newPacket->distance == 0)
+      {
+
+        newPacket->endRouter = pathToVictim->at(index);
+
+      }
+
+      newPacket->distance++;
+
     }
   }
 
