@@ -18,6 +18,11 @@ struct RouterNode
   int IP;
   std::vector<RouterNode*> NeighborNodes;
 
+  bool operator < (const RouterNode& rhs) const
+  {
+        return IP < rhs.IP;
+  }
+
 };
 
 struct Packet
@@ -41,10 +46,7 @@ struct PacketEdge
   int routerNum;
   int distance;
 
-  bool operator < (const PacketEdge& rhs) const
-  {
-        return routerNum < rhs.routerNum;
-  }
+
 
 };
 
@@ -57,6 +59,8 @@ PacketEdge* sendPacketToVictimEdge(std::vector<RouterNode*>* pathToVictim); //
 
 std::vector<RouterNode*>* findPathToVictim(std::vector<RouterNode*>* routerNodeList, RouterNode* attackerNode); //
 bool buildPath(Packet* newPacket, RouterNode* attackerNode, std::vector<Packet*>* reconstructedPath, std::vector<RouterNode*>* realPath); //
+
+bool fullRouteCheck(std::vector<RouterNode*>* pathToVictim, RouterNode* packet);
 
 
 int main()
@@ -100,7 +104,7 @@ int main()
         attackingUser = buildPath(sentPacket, attackerNode, &reconstructedPath, pathToVictimNode);
         if(sizeCheck != reconstructedPath.size())
         {
-          std::cout << "At packet number " << count << " new route found" << std::endl;
+        /*  std::cout << "At packet number " << count << " new route found" << std::endl; */
         }
 
       }
@@ -110,12 +114,18 @@ int main()
 
   }
   std::cout << "Node Sampling sent packet count = " << count << std::endl;
-/*
+
+  std::cout << "Edge Sampling Begins ---------------" << std::endl << std::endl;
+
   // Edge sampling algo
   int countEdge = 0;
   bool attackingUserEdge = false;
   PacketEdge* sentPacketEdge;
-  std::vector<PacketEdge*> reconstructedPathEdge;
+
+  std::vector<RouterNode*> reconstructedPathEdge;
+  for(int x = 0; x < reconstructedPathEdge.size(); x++)
+  {reconstructedPathEdge.at(x) = NULL;}
+
   char holdChar;
 
   while(!attackingUserEdge)
@@ -123,32 +133,115 @@ int main()
 
     if(countEdge % attackerSpeed == 0)
     {
-      std::cout << "here" << std::endl;
       sentPacketEdge = sendPacketToVictimEdge(pathToVictimNode);
-
     }
 
-    std::cout << "Packet back: " << sentPacketEdge->routerNum << ";" << std::endl;
 
     if(countEdge % (attackerSpeed*2) == 0)
     {
       if(sentPacketEdge->routerNum >= 0)
       {
+        if(sentPacketEdge->startRouter != NULL)
+        {
+
+          if(fullRouteCheck(&reconstructedPathEdge, sentPacketEdge->startRouter))
+          {
+            reconstructedPathEdge.push_back(sentPacketEdge->startRouter);
+            std::cout << "StartRouter At packet number " << countEdge << " new route found" << std::endl;
+          }
+
+        if(sentPacketEdge->endRouter != NULL)
+        {
+
+          if(fullRouteCheck(&reconstructedPathEdge, sentPacketEdge->endRouter))
+          {
+
+            std::cout << "EndRouter At packet number " << countEdge << " new route found" << std::endl;
+            reconstructedPathEdge.push_back(sentPacketEdge->endRouter);
+          }
+        }
 
 
       }
 
-
+      std::sort(reconstructedPathEdge.begin(), reconstructedPathEdge.end());
+    }
     }
 
     countEdge++;
-    std::cin >> holdChar;
+    if(reconstructedPathEdge.size() >= pathToVictimNode->size())
+    {
+
+      attackingUserEdge = !attackingUserEdge;
+    }
 
   }
 
-*/
+  std::cout << "Count for Edge sampling = " << countEdge << std::endl;
 
   return(0);
+}
+
+bool fullRouteCheck(std::vector<RouterNode*>* pathToVictim, RouterNode* packet)
+{
+
+  for(int index = 0; index < pathToVictim->size(); index++)
+  {
+
+    if(pathToVictim->at(index)->IP == packet->IP)
+    {
+
+      return false;
+
+    }
+
+  }
+
+  return true;
+
+}
+
+PacketEdge* sendPacketToVictimEdge(std::vector<RouterNode*>* pathToVictim)
+{
+
+  PacketEdge* newPacket = new PacketEdge();
+  newPacket->routerNum = -1; // setting for easier debug
+  newPacket->distance = -1; // setting for easier debug
+  newPacket->startRouter = NULL;
+  newPacket->endRouter = NULL;
+  int randomProbability;
+
+  // Victim in the last node.
+  // Attacker is the first RouterNode [0]
+  // Simulate passing the packet to each router
+  for(int index = 0; index < pathToVictim->size(); index++)
+  {
+    randomProbability = rand() % 100 + 1;
+
+    if(randomProbability < PROBABILITY_OF_ROUTER_MARKING)
+    {
+      newPacket->startRouter = pathToVictim->at(index);
+      newPacket->distance = 0;
+      newPacket->routerNum = index;
+    }else
+    {
+
+      if(newPacket->distance == 0)
+      {
+
+        newPacket->endRouter = pathToVictim->at(index);
+
+      }
+
+
+
+      newPacket->distance++;
+
+    }
+  }
+
+  return newPacket;
+
 }
 
 bool buildPath(Packet* newPacket, RouterNode* attackerNode, std::vector<Packet*>* reconstructedPath, std::vector<RouterNode*>* realPath)
@@ -207,47 +300,6 @@ Packet* sendPacketToVictim(std::vector<RouterNode*>* pathToVictim)
     {
       newPacket->p_markedRouter = pathToVictim->at(index);
       newPacket->p_routerNum = index;
-    }
-  }
-
-  return newPacket;
-
-}
-
-PacketEdge* sendPacketToVictimEdge(std::vector<RouterNode*>* pathToVictim)
-{
-
-  PacketEdge* newPacket = new PacketEdge();
-  newPacket->routerNum = -1; // setting for easier debug
-  newPacket->distance = -1; // setting for easier debug
-  int randomProbability;
-
-  // Victim in the last node.
-  // Attacker is the first RouterNode [0]
-  // Simulate passing the packet to each router
-  std::cout << std::endl;
-  std::cout << pathToVictim->size() << std::endl;
-  for(int index = 0; index < pathToVictim->size(); index++)
-  {
-    randomProbability = rand() % 100 + 1;
-
-    if(randomProbability < PROBABILITY_OF_ROUTER_MARKING)
-    {
-      newPacket->startRouter = pathToVictim->at(index);
-      newPacket->distance = 0;
-      newPacket->routerNum = index;
-    }else
-    {
-
-      if(newPacket->distance == 0)
-      {
-
-        newPacket->endRouter = pathToVictim->at(index);
-
-      }
-
-      newPacket->distance++;
-
     }
   }
 
